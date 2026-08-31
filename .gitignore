@@ -25,3 +25,4 @@ airflow/standalone_admin_password.txt
 .DS_Store
 .vscode/
 .idea/
+dbt/aether_trade/.user.yml
