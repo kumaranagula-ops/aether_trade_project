@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dbt-parse:
+    name: dbt parse (structural check, no live Snowflake connection)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dbt/aether_trade
+    env:
+      DBT_PROFILES_DIR: ${{ github.workspace }}/dbt/aether_trade
+      # Dummy values: `dbt parse` never opens a connection, it only needs
+      # profiles.yml to render. Nothing here talks to a real warehouse.
+      SNOWFLAKE_ACCOUNT: ci-placeholder
+      SNOWFLAKE_USER: ci-placeholder
+      SNOWFLAKE_PASSWORD: ci-placeholder
+      SNOWFLAKE_ROLE: TRANSFORMER
+      SNOWFLAKE_WAREHOUSE: COMPUTE_WH
+      SNOWFLAKE_DATABASE: AETHER_TRADE
+      SNOWFLAKE_SCHEMA: MART_DBT
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dbt-snowflake
+        run: pip install dbt-snowflake~=1.8.0
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt parse
+        run: dbt parse --no-partial-parse
+
+  docker-compose-config:
+    name: docker compose config (validate compose file resolves)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fabricate a throwaway .env so config resolves
+        run: cp .env.example .env
+
+      - name: docker compose config
+        run: docker compose config --quiet
+
+  airflow-dag-syntax:
+    name: Airflow DAG syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile-check DAG files
+        run: python -m py_compile airflow/dags/*.py
