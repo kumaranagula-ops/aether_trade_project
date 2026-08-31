@@ -1,0 +1,43 @@
+name: 'aether_trade'
+version: '1.0.0'
+config-version: 2
+profile: 'aether_trade'
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # dbt owns STG -> MART. RAW -> STG stays native (Snowpipe + Streams + Tasks,
+  # see sql/snowflake/04_pipes_streams_tasks.sql) since that's event-driven CDC,
+  # not a batch transform problem.
+  aether_trade_start_date: '2020-01-01'
+
+models:
+  aether_trade:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: staging
+      +materialized: view
+    marts:
+      +materialized: table
+      dimensions:
+        +tags: ['dimension']
+      facts:
+        +tags: ['fact']
+
+seeds:
+  aether_trade:
+    +schema: staging
+    +tags: ['seed']
+
+snapshots:
+  aether_trade:
+    +tags: ['snapshot']

@@ -1,0 +1,33 @@
+# Copy this to ~/.dbt/profiles.yml (or point DBT_PROFILES_DIR at this folder)
+# and fill in the env vars below. Never commit real credentials — this file
+# is safe to commit precisely because every secret comes from env_var().
+#
+# Password auth is the simplest path to get running. For anything beyond a
+# personal sandbox, switch to key-pair auth (commented block) — Snowflake is
+# deprecating single-factor password auth for programmatic access.
+
+aether_trade:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+
+      # --- Key-pair auth alternative (recommended over password) ---
+      # private_key_path: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PATH') }}"
+      # private_key_passphrase: "{{ env_var('SNOWFLAKE_PRIVATE_KEY_PASSPHRASE', '') }}"
+
+      role: "{{ env_var('SNOWFLAKE_ROLE', 'TRANSFORMER') }}"
+      warehouse: "{{ env_var('SNOWFLAKE_WAREHOUSE', 'COMPUTE_WH') }}"
+      database: "{{ env_var('SNOWFLAKE_DATABASE', 'AETHER_TRADE') }}"
+
+      # dbt's own working schema — deliberately NOT 'MART', so dbt's output
+      # never collides with the tables sql/snowflake/03_mart.sql created by
+      # hand. Point BI/reporting at MART_DBT once you're ready to cut over.
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA', 'MART_DBT') }}"
+
+      threads: 4
+      client_session_keep_alive: false
+      query_tag: "dbt_aether_trade"

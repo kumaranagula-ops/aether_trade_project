@@ -1,0 +1,5 @@
+# Installed via git (not the dbt Hub) on purpose: hub.getdbt.com is blocked
+# on a lot of corporate networks/CI runners, github.com usually isn't.
+packages:
+  - git: "https://github.com/dbt-labs/dbt-utils.git"
+    revision: 1.4.1

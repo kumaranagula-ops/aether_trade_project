@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: One row per order, latest image, pass-through from native STG.
+    columns:
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: side
+        data_tests:
+          - accepted_values:
+              arguments: { values: ['B', 'S'] }
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: { values: ['NEW', 'PARTIAL', 'FILLED', 'CXL', 'REJ'] }
+
+  - name: stg_execution
+    description: One row per fill/execution, latest image, pass-through from native STG.
+    columns:
+      - name: execution_id
+        data_tests: [not_null, unique]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('stg_orders'), field: order_id }
+
+  - name: stg_customer
+    columns:
+      - name: customer_id
+        data_tests: [not_null, unique]
+
+  - name: stg_account
+    columns:
+      - name: account_id
+        data_tests: [not_null, unique]
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('stg_customer'), field: customer_id }
+
+  - name: stg_security
+    columns:
+      - name: security_id
+        data_tests: [not_null, unique]
+
+  - name: stg_advisor
+    columns:
+      - name: advisor_id
+        data_tests: [not_null, unique]
+
+  - name: stg_position
+    description: >
+      Daily EOD position snapshot, flattened by dbt directly from RAW (see
+      model SQL for why). Grain is one row per account/security/as_of_date.
+    columns:
+      - name: account_id
+        data_tests: [not_null]
+      - name: security_id
+        data_tests: [not_null]

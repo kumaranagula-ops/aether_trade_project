@@ -1,0 +1,42 @@
+version: 2
+
+sources:
+  - name: stg
+    description: >
+      Native Snowflake STG schema. Populated by Snowpipe + Streams + Tasks
+      (sql/snowflake/04_pipes_streams_tasks.sql) flattening RAW CDC payloads
+      into the "latest image per key" tables dbt reads from here.
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'AETHER_TRADE') }}"
+    schema: STG
+    tables:
+      - name: orders
+        config:
+          loaded_at_field: loaded_at
+          freshness:
+            warn_after: { count: 10, period: minute }
+            error_after: { count: 20, period: minute }
+      - name: execution
+        config:
+          loaded_at_field: loaded_at
+          freshness:
+            warn_after: { count: 10, period: minute }
+            error_after: { count: 20, period: minute }
+      - name: customer
+      - name: account
+      - name: security
+      - name: advisor
+
+  - name: raw
+    description: >
+      Native Snowflake RAW schema — landed CDC/file payloads, VARIANT, before
+      any flattening. dbt reads POSITION_CDC directly here because the native
+      pipeline doesn't (yet) flatten it into its own STG table.
+    database: "{{ env_var('SNOWFLAKE_DATABASE', 'AETHER_TRADE') }}"
+    schema: RAW
+    tables:
+      - name: position_cdc
+        config:
+          loaded_at_field: loaded_at
+          freshness:
+            warn_after: { count: 20, period: minute }
+            error_after: { count: 60, period: minute }

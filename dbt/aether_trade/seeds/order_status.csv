@@ -1,0 +1,6 @@
+status_code,status_desc
+NEW,New - not yet filled
+PARTIAL,Partially filled
+FILLED,Fully filled
+CXL,Cancelled
+REJ,Rejected

@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: fact_order
+    columns:
+      - name: order_sk
+        data_tests: [not_null, unique]
+      - name: order_id
+        data_tests: [not_null, unique]
+      - name: account_sk
+        data_tests:
+          - relationships:
+              arguments: { to: ref('dim_account'), field: account_sk }
+
+  - name: fact_execution
+    columns:
+      - name: execution_sk
+        data_tests: [not_null, unique]
+      - name: execution_id
+        data_tests: [not_null, unique]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments: { to: ref('fact_order'), field: order_id }
+      - name: notional
+        data_tests: [not_null]
+
+  - name: fact_position_snapshot
+    columns:
+      - name: pos_sk
+        data_tests: [not_null, unique]
+
+  - name: agg_daily_volume
+    description: Daily buy/sell volume and commission rolled up by advisor and security.
