@@ -1,0 +1,4 @@
+exchange_id,exchange_code,exchange_name,timezone
+1,NYSE,New York Stock Exchange,America/New_York
+2,NASDAQ,Nasdaq,America/New_York
+3,ARCA,NYSE Arca,America/New_York

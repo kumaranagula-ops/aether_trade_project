@@ -1,0 +1,26 @@
+advisor_id,branch_id,advisor_code,full_name,email,is_active
+1,1,FA001,Liam Chen,fa001@aether.example,True
+2,2,FA002,James Nguyen,fa002@aether.example,True
+3,3,FA003,Noah Johnson,fa003@aether.example,True
+4,4,FA004,Priya Garcia,fa004@aether.example,True
+5,5,FA005,Anika Chen,fa005@aether.example,True
+6,1,FA006,Liam Nguyen,fa006@aether.example,True
+7,2,FA007,Raj Chen,fa007@aether.example,True
+8,3,FA008,Sofia Singh,fa008@aether.example,True
+9,4,FA009,James Patel,fa009@aether.example,True
+10,5,FA010,Maria Johnson,fa010@aether.example,True
+11,1,FA011,Priya Brown,fa011@aether.example,True
+12,2,FA012,Sofia Patel,fa012@aether.example,True
+13,3,FA013,Raj Johnson,fa013@aether.example,True
+14,4,FA014,Anika Iyer,fa014@aether.example,True
+15,5,FA015,Anika Brown,fa015@aether.example,True
+16,1,FA016,Omar Johnson,fa016@aether.example,True
+17,2,FA017,Elena Lopez,fa017@aether.example,True
+18,3,FA018,Noah Patel,fa018@aether.example,True
+19,4,FA019,Wei Nguyen,fa019@aether.example,True
+20,5,FA020,Omar Williams,fa020@aether.example,True
+21,1,FA021,Noah Garcia,fa021@aether.example,True
+22,2,FA022,Priya Williams,fa022@aether.example,True
+23,3,FA023,Maria Chen,fa023@aether.example,True
+24,4,FA024,Omar Chen,fa024@aether.example,True
+25,5,FA025,Ava Williams,fa025@aether.example,True

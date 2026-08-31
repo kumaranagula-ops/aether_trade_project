@@ -1,0 +1,27 @@
+# --- Python / dbt ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+target/
+dbt_packages/
+dbt_modules/
+logs/
+*.log
+
+# --- Airflow ---
+airflow/logs/
+airflow/plugins/__pycache__/
+airflow/airflow.db
+airflow/airflow-webserver.pid
+airflow/standalone_admin_password.txt
+
+# --- Docker / secrets ---
+.env
+*.env.local
+!.env.example
+
+# --- OS / editors ---
+.DS_Store
+.vscode/
+.idea/
