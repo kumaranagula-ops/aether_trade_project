@@ -1,0 +1,51 @@
+name: Deploy to Snowflake
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Snowflake CLI
+        run: pip install snowflake-cli
+
+      - name: Configure Snowflake
+        env:
+          SF_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SF_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SF_PRIVATE_KEY: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.snowflake
+          echo "$SF_PRIVATE_KEY" > ~/.snowflake/rsa_key.p8
+          chmod 600 ~/.snowflake/rsa_key.p8
+
+          cat > ~/.snowflake/config.toml <<EOT
+          default_connection_name = "default"
+          EOT
+          chmod 600 ~/.snowflake/config.toml
+
+          cat > ~/.snowflake/connections.toml <<EOT
+          [default]
+          account = "$SF_ACCOUNT"
+          user = "$SF_USER"
+          authenticator = "SNOWFLAKE_JWT"
+          private_key_file = "~/.snowflake/rsa_key.p8"
+          warehouse = "COMPUTE_WH"
+          database = "SNOWFLAKE_LEARNING_DB"
+          schema = "PUBLIC"
+          EOT
+          chmod 600 ~/.snowflake/connections.toml
+
+      - name: Run SQL script
+        run: snow sql -c default -f sql/snowflake/01_databases_schemas.sql
