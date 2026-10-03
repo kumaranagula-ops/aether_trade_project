@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<configuration>
+  <property><name>yarn.resourcemanager.hostname</name><value>resourcemanager</value></property>
+  <property><name>yarn.resourcemanager.bind-host</name><value>0.0.0.0</value></property>
+  <!-- What the single NodeManager offers to Spark containers. -->
+  <property><name>yarn.nodemanager.resource.memory-mb</name><value>4096</value></property>
+  <property><name>yarn.nodemanager.resource.cpu-vcores</name><value>4</value></property>
+  <property><name>yarn.scheduler.minimum-allocation-mb</name><value>256</value></property>
+  <property><name>yarn.scheduler.maximum-allocation-mb</name><value>4096</value></property>
+  <!-- Memory checks misfire inside Docker and kill healthy containers. -->
+  <property><name>yarn.nodemanager.vmem-check-enabled</name><value>false</value></property>
+  <property><name>yarn.nodemanager.pmem-check-enabled</name><value>false</value></property>
+  <property><name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name><value>98</value></property>
+  <!-- Keep container logs after an application finishes: copy them into HDFS
+       so `yarn logs -applicationId <id>` can read them later. -->
+  <property><name>yarn.log-aggregation-enable</name><value>true</value></property>
+  <property><name>yarn.nodemanager.remote-app-log-dir</name><value>/tmp/logs</value></property>
+  <property><name>yarn.log-aggregation.retain-seconds</name><value>604800</value></property>
+  <property><name>yarn.log.server.url</name><value>http://historyserver:19888/jobhistory/logs</value></property>
+</configuration>

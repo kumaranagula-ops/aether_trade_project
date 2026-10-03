@@ -1,0 +1,178 @@
+# Big data layer for aether_trade_project: HDFS + YARN + Hive + Spark 3.5 (PySpark)
+# Use together with the main compose file so everything shares one network:
+#   docker compose -f docker-compose.yml -f docker-compose.bigdata.yml up -d --build
+#
+# Sized for Docker Desktop with ~10 GB RAM. Web UIs:
+#   HDFS NameNode  http://localhost:9870
+#   YARN           http://localhost:8088
+#   Spark job UI   http://localhost:4040  (only while a job runs)
+#   HiveServer2    http://localhost:10002 (JDBC on 10000)
+#   Container logs http://localhost:19888 (history server; links in the YARN UI need
+#                  the container names in /etc/hosts, see below)
+#
+# The Hadoop UIs link to each other by container hostname. To make those links open
+# in the Mac's browser, add this line to /etc/hosts once:
+#   127.0.0.1 namenode datanode resourcemanager nodemanager historyserver
+
+x-bigdata: &bigdata
+  image: aether-bigdata:spark3.5-hadoop3.3
+  build:
+    context: ./bigdata
+  restart: unless-stopped
+  networks:
+    - bigdata
+
+x-hadoop-env: &hadoop-env
+  HADOOP_HEAPSIZE_MAX: 512m
+  HADOOP_USER_NAME: root
+
+services:
+  namenode:
+    <<: *bigdata
+    hostname: namenode
+    command: ["namenode"]
+    environment: *hadoop-env
+    ports:
+      - "9870:9870"
+    volumes:
+      - hdfs_name:/hadoop/dfs/name
+
+  datanode:
+    <<: *bigdata
+    hostname: datanode
+    command: ["datanode"]
+    environment: *hadoop-env
+    ports:
+      - "9864:9864"
+    depends_on:
+      - namenode
+    volumes:
+      - hdfs_data:/hadoop/dfs/data
+
+  resourcemanager:
+    <<: *bigdata
+    hostname: resourcemanager
+    command: ["resourcemanager"]
+    environment: *hadoop-env
+    ports:
+      - "8088:8088"
+
+  nodemanager:
+    <<: *bigdata
+    hostname: nodemanager
+    command: ["nodemanager"]
+    environment: *hadoop-env
+    ports:
+      - "8042:8042"
+    depends_on:
+      - resourcemanager
+
+  historyserver:
+    <<: *bigdata
+    hostname: historyserver
+    command: ["historyserver"]
+    environment:
+      <<: *hadoop-env
+      HADOOP_HEAPSIZE_MAX: 256m
+    depends_on:
+      - namenode
+    ports:
+      - "19888:19888"
+
+  hive-metastore-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - bigdata
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+    volumes:
+      - hive_metastore_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  hive-metastore:
+    image: aether-hive:3.1.3
+    build:
+      context: ./bigdata/hive
+    restart: unless-stopped
+    hostname: hive-metastore
+    # Hive 3 reverse-resolves the metastore address and rejects underscores,
+    # so the container and network names must not contain any.
+    container_name: hive-metastore
+    networks:
+      - bigdata
+    environment:
+      SERVICE_NAME: metastore
+      SERVICE_OPTS: -Xmx512m
+    depends_on:
+      hive-metastore-db:
+        condition: service_healthy
+    ports:
+      - "9083:9083"
+
+  hiveserver2:
+    image: aether-hive:3.1.3
+    build:
+      context: ./bigdata/hive
+    restart: unless-stopped
+    hostname: hiveserver2
+    networks:
+      - bigdata
+    environment:
+      SERVICE_NAME: hiveserver2
+      SERVICE_OPTS: -Xmx768m
+    depends_on:
+      - hive-metastore
+      - namenode
+    ports:
+      - "10000:10000"
+      - "10002:10002"
+
+  spark-client:
+    <<: *bigdata
+    hostname: spark-client
+    command: ["spark-client"]
+    environment:
+      <<: *hadoop-env
+    depends_on:
+      - namenode
+      - datanode
+      - resourcemanager
+      - nodemanager
+      - hive-metastore
+    ports:
+      - "4040:4040"
+    volumes:
+      - ./bigdata/jobs:/opt/jobs
+      - ./data:/opt/data:ro
+
+  # Airflow scheduler (defined in docker-compose.yml) also joins the big data
+  # network so its tasks can reach HDFS and YARN. LocalExecutor runs tasks here.
+  airflow-scheduler:
+    networks:
+      - default
+      - bigdata
+    environment:
+      HADOOP_CONF_DIR: /opt/hadoop-conf
+      YARN_CONF_DIR: /opt/hadoop-conf
+      HADOOP_USER_NAME: root
+    volumes:
+      - ./bigdata/conf/hadoop:/opt/hadoop-conf:ro
+      - ./bigdata/conf/spark:/opt/spark-conf:ro
+      - ./bigdata/jobs:/opt/airflow/spark_jobs:ro
+      - ./data:/opt/airflow/data:ro
+
+networks:
+  bigdata:
+    name: aether-bigdata
+
+volumes:
+  hdfs_name:
+  hdfs_data:
+  hive_metastore_db:
