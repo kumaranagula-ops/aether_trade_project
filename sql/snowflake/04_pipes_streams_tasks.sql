@@ -4,9 +4,13 @@ CREATE OR REPLACE FILE FORMAT AETHER_TRADE.RAW.FF_JSON
     STRIP_OUTER_ARRAY = TRUE
     COMPRESSION = GZIP;
 
--- Assume stage already exists: AETHER_TRADE.RAW.STG_S3_CDC
+-- Internal stage stand-in: in production this would be an external S3 stage
+-- tied to a storage integration (real AWS IAM role) reading Debezium CDC
+-- output. A personal/trial account has no such bucket wired up, so an
+-- internal Snowflake-managed stage takes its place -- same pipe/stream/task
+-- mechanics, just no live files landing in it.
+CREATE STAGE IF NOT EXISTS AETHER_TRADE.RAW.STG_S3_CDC;
 CREATE OR REPLACE PIPE AETHER_TRADE.RAW.PIPE_EXECUTION
-    AUTO_INGEST = TRUE
 AS
 COPY INTO AETHER_TRADE.RAW.EXECUTION_CDC (event_id, op, payload, event_ts, file_name)
 FROM (
@@ -22,7 +26,6 @@ FILE_FORMAT = AETHER_TRADE.RAW.FF_JSON
 ON_ERROR = CONTINUE;
 
 CREATE OR REPLACE PIPE AETHER_TRADE.RAW.PIPE_ORDERS
-    AUTO_INGEST = TRUE
 AS
 COPY INTO AETHER_TRADE.RAW.ORDERS_CDC (event_id, op, payload, event_ts, file_name)
 FROM (
@@ -80,7 +83,7 @@ WHEN NOT MATCHED AND s.op <> 'D' THEN INSERT (
     s.commission, s.venue, s.fill_ts, s.op, s.src_event_ts, s.loaded_at
 );
 
-CREATE OR REPLACE TASK AETHER_TRADE.MART.TASK_FACT_EXECUTION
+CREATE OR REPLACE TASK AETHER_TRADE.STG.TASK_FACT_EXECUTION
     WAREHOUSE = COMPUTE_WH
     AFTER AETHER_TRADE.STG.TASK_LOAD_EXECUTION
 AS
@@ -125,5 +128,5 @@ WHEN NOT MATCHED THEN INSERT (
     src.trade_date_sk, src.side, src.fill_qty, src.fill_px, src.notional, src.commission, src.venue, src.fill_ts
 );
 
-ALTER TASK AETHER_TRADE.MART.TASK_FACT_EXECUTION RESUME;
+ALTER TASK AETHER_TRADE.STG.TASK_FACT_EXECUTION RESUME;
 ALTER TASK AETHER_TRADE.STG.TASK_LOAD_EXECUTION RESUME;

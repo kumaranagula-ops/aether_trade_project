@@ -47,7 +47,7 @@ def aether_trade_position_snapshot_daily():
         task_id="dbt_build_fact_position_snapshot",
         bash_command=(
             f"cd {DBT_PROJECT_DIR} && "
-            f"dbt build --select stg_position+ fact_position_snapshot "
+            f"/home/airflow/.venvs/snowflake-tools/bin/dbt build --select stg_position+ fact_position_snapshot "
             f"--profiles-dir {DBT_PROFILES_DIR}"
         ),
     )

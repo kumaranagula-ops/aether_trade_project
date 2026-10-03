@@ -1,1 +1,2 @@
 dbt-snowflake~=1.8.0
+snowflake-cli
