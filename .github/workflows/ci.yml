@@ -20,6 +20,8 @@ jobs:
       SNOWFLAKE_ACCOUNT: ci-placeholder
       SNOWFLAKE_USER: ci-placeholder
       SNOWFLAKE_PASSWORD: ci-placeholder
+      # profiles.yml uses key-pair auth; parse only needs the variable to exist.
+      SNOWFLAKE_PRIVATE_KEY_PATH: ci-placeholder
       SNOWFLAKE_ROLE: TRANSFORMER
       SNOWFLAKE_WAREHOUSE: COMPUTE_WH
       SNOWFLAKE_DATABASE: AETHER_TRADE
