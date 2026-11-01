@@ -110,6 +110,31 @@ docker compose down          # keep volumes (OLTP + Airflow data persist)
 docker compose down -v       # also wipe volumes
 ```
 
+## NAS pipeline (Spark catalog, bronze → silver → gold)
+
+DAG `aether_trade_nas_pipeline` loads files from a NAS folder into the Spark
+catalog (Hive Metastore + Iceberg) on the big data stack:
+
+| Task | Output |
+|---|---|
+| `land_nas_to_hdfs` | NAS folders mirrored to `hdfs:///data/nas/landing/<source>/` |
+| `spark_bronze` | `nas_bronze.*`: raw rows + `_source_file`, `_ingested_at` (Hive/Parquet) |
+| `spark_silver` | `lake.nas_silver.*`: typed, de-duplicated, bad rows dropped (Iceberg, `MERGE` on reruns) |
+| `spark_gold` | `lake.nas_gold.daily_sales`, `lake.nas_gold.customer_value` (Iceberg) |
+| `verify_gold` | fails if a gold table has no data files |
+
+- Jobs: `bigdata/jobs/nas_pipeline/` (sources are listed in `common.py`).
+- NAS folder: `NAS_LANDING_DIR` in `.env`, mounted read-only into the scheduler.
+  Default `./nas/landing` holds sample data; regenerate with
+  `python3 scripts/make_nas_sample_data.py`. It needs one sub-folder per source.
+- Run: `docker compose -f docker-compose.yml -f docker-compose.bigdata.yml up -d`,
+  then trigger the DAG in the Airflow UI (http://localhost:8080).
+- Query from `spark-client`: `docker compose -f docker-compose.yml -f docker-compose.bigdata.yml exec spark-client spark-sql`,
+  then e.g. `SELECT * FROM lake.nas_gold.daily_sales;`
+
+Adding a source: drop its folder on the NAS, add it to `SOURCES` in `common.py`,
+and add its cleaning step in `silver.py`.
+
 ## Why dbt + Airflow here (not just Snowflake Tasks)
 
 The original design (`sql/snowflake/04_pipes_streams_tasks.sql`) does the

@@ -167,6 +167,8 @@ services:
       - ./bigdata/conf/spark:/opt/spark-conf:ro
       - ./bigdata/jobs:/opt/airflow/spark_jobs:ro
       - ./data:/opt/airflow/data:ro
+      # NAS landing folder for the aether_trade_nas_pipeline DAG.
+      - ${NAS_LANDING_DIR:-./nas/landing}:/opt/airflow/nas:ro
 
 networks:
   bigdata:
